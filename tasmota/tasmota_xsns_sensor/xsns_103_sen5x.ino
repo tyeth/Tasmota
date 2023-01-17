@@ -1,7 +1,7 @@
 /*
   xsns_103_sen5x.ino - SEN5X gas and air quality sensor support for Tasmota
 
-  Copyright (C) 2022  Jean-Pierre Deschamps
+  Copyright (C) 2022  Tyeth Gundry
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@
 #ifdef USE_I2C
 #ifdef USE_SEN5X
 /*********************************************************************************************\
- * SEN5X - Gas (TVOC - Total Volatile Organic Compounds) and Air Quality (CO2)
+ * SEN5X - Gas (VOC - Volatile Organic Compounds / NOx - Nitrous Oxides) and Particulates (PPM)
  *
- * Source: Gerhard Mutz and Adafruit Industries
- * Adaption for TASMOTA: Jean-Pierre Deschamps
+ * Source: Sensirion SEN5X Driver + Example, and Tasmota Driver 98 by Jean-Pierre Deschamps
+ * Adaption for TASMOTA: Tyeth Gundry
  *
  * I2C Address: 0x59
 \*********************************************************************************************/
@@ -136,6 +136,7 @@ void SEN5XUpdate(void) // Perform every second to ensure proper operation of the
   else
   {
 #ifdef DEBUG_TASMOTA_SENSOR
+    Serial.print("SEN5x readings:-")
     Serial.print("MassConcentrationPm1p0:");
     Serial.print(sen5x_massConcentrationPm1p0);
     Serial.print("\t");

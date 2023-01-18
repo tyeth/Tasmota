@@ -1,7 +1,7 @@
 /*
   xsns_103_sen5x.ino - SEN5X gas and air quality sensor support for Tasmota
 
-  Copyright (C) 2022  Tyeth Gundry
+  Copyright (C) 2023  Tyeth Gundry
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by

@@ -138,7 +138,7 @@ void SEN5XUpdate(void) // Perform every second to ensure proper operation of the
   else
   {
 #ifdef DEBUG_TASMOTA_SENSOR
-    Serial.print("SEN5x readings:-")
+    Serial.print("SEN5x readings:-");
     Serial.print("MassConcentrationPm1p0:");
     Serial.print(SEN5XDATA->massConcentrationPm1p0);
     Serial.print("\t");
@@ -181,6 +181,7 @@ void SEN5XUpdate(void) // Perform every second to ensure proper operation of the
       Serial.print(SEN5XDATA->vocIndex);
     }
     Serial.print("\t");
+    
     Serial.print("NoxIndex:");
     if (isnan(SEN5XDATA->noxIndex))
     {

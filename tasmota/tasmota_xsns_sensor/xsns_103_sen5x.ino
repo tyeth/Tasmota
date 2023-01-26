@@ -58,12 +58,16 @@ void sen5x_Init(void)
 #ifdef ESP32
   if (!I2cSetDevice(SEN5X_ADDRESS, 0))
   {
-    if (!I2cSetDevice(SEN5X_ADDRESS, 1))
-    {
-      return;
+    if (TasmotaGlobal.i2c_enabled_2 ){
+      if(!I2cSetDevice(SEN5X_ADDRESS, 1)){
+        return;
+      }
+      i2cBus = Wire1; // switch to bus 1
+      usingI2cBus = 1;
     }               // check on bus 1
-    i2cBus = Wire1; // switch to bus 1
-    usingI2cBus = 1;
+    else {
+      return;
+    }
   }
 #else
   if (!I2cSetDevice(SEN5X_ADDRESS))
@@ -88,7 +92,6 @@ void sen5x_Init(void)
     return;
   }
   SEN5XDATA->sen5x_ready = true;
-  //    AddLog(LOG_LEVEL_DEBUG, PSTR("SEN: Serialnumber 0x%04X-0x%04X-0x%04X"), sen5x.serialnumber[0], sen5x.serialnumber[1], sen5x.serialnumber[2]);
   I2cSetActiveFound(SEN5X_ADDRESS, "SEN5X", usingI2cBus);
 }
 

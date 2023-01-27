@@ -58,8 +58,11 @@ void sen5x_Init(void)
 #ifdef ESP32
   if (!I2cSetDevice(SEN5X_ADDRESS, 0))
   {
+    DEBUG_SENSOR_LOG(PSTR("Sensirion SEN5X not found, i2c bus 0"));
     if (TasmotaGlobal.i2c_enabled_2 ){
+
       if(!I2cSetDevice(SEN5X_ADDRESS, 1)){
+        DEBUG_SENSOR_LOG(PSTR("Sensirion SEN5X not found, i2c bus 1"));
         return;
       }
       i2cBus = Wire1; // switch to bus 1
@@ -72,6 +75,7 @@ void sen5x_Init(void)
 #else
   if (!I2cSetDevice(SEN5X_ADDRESS))
   {
+    DEBUG_SENSOR_LOG(PSTR("Sensirion SEN5X not found, i2c bus 0"));
     return;
   }
 #endif
@@ -82,6 +86,7 @@ void sen5x_Init(void)
   int error_stop = sen5x->deviceReset();
   if (error_stop != 0)
   {
+    DEBUG_SENSOR_LOG(PSTR("Sensirion SEN5X failed to reset device (I2C Bus %d)"), usingI2cBus);
     return;
   }
   // Wait 1 second for sensors to start recording + 100ms for reset command
@@ -89,10 +94,12 @@ void sen5x_Init(void)
   int error_start = sen5x->startMeasurement();
   if (error_start != 0)
   {
+    DEBUG_SENSOR_LOG(PSTR("Sensirion SEN5X failed to start measurement (I2C Bus %d)"), usingI2cBus);
     return;
   }
   SEN5XDATA->sen5x_ready = true;
   I2cSetActiveFound(SEN5X_ADDRESS, "SEN5X", usingI2cBus);
+  DEBUG_SENSOR_LOG(PSTR("Sensirion SEN5X found, i2c bus %d"), usingI2cBus);
 }
 
 // #define POW_FUNC pow
@@ -126,6 +133,7 @@ void SEN5XUpdate(void) // Perform every second to ensure proper operation of the
 {
   uint16_t error;
   char errorMessage[256];
+  DEBUG_SENSOR_LOG(PSTR("Running readMeasuredValues for SEN5X..."));
 
   error = sen5x->readMeasuredValues(
       SEN5XDATA->massConcentrationPm1p0, SEN5XDATA->massConcentrationPm2p5, SEN5XDATA->massConcentrationPm4p0,
@@ -134,70 +142,62 @@ void SEN5XUpdate(void) // Perform every second to ensure proper operation of the
 
   if (error)
   {
-    Serial.print("Error trying to execute readMeasuredValues(): ");
+    AddLog(LOG_LEVEL_DEBUG, PSTR("Failed to retrieve SEN5X readings."));
+    #ifdef DEBUG_TASMOTA_SENSOR
+    DEBUG_SENSOR_LOG(PSTR("Error trying to execute readMeasuredValues(): \n"));
     errorToString(error, errorMessage, 256);
-    Serial.println(errorMessage);
+    DEBUG_SENSOR_LOG(errorMessage);
+    #endif
   }
   else
   {
 #ifdef DEBUG_TASMOTA_SENSOR
-    Serial.print("SEN5x readings:-");
-    Serial.print("MassConcentrationPm1p0:");
-    Serial.print(SEN5XDATA->massConcentrationPm1p0);
-    Serial.print("\t");
-    Serial.print("MassConcentrationPm2p5:");
-    Serial.print(SEN5XDATA->massConcentrationPm2p5);
-    Serial.print("\t");
-    Serial.print("MassConcentrationPm4p0:");
-    Serial.print(SEN5XDATA->massConcentrationPm4p0);
-    Serial.print("\t");
-    Serial.print("MassConcentrationPm10p0:");
-    Serial.print(SEN5XDATA->massConcentrationPm10p0);
-    Serial.print("\t");
-    Serial.print("AmbientHumidity:");
+    DEBUG_SENSOR_LOG(PSTR("SEN5x readings:-"));
+    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm1p0: %d\n"), SEN5XDATA->massConcentrationPm1p0);
+    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm2p5: %d\n"), SEN5XDATA->massConcentrationPm2p5);
+    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm4p0: %d\n"), SEN5XDATA->massConcentrationPm4p0);
+    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm10p0: %d\n"), SEN5XDATA->massConcentrationPm10p0);
     if (isnan(SEN5XDATA->ambientHumidity))
     {
-      Serial.print("n/a");
+      DEBUG_SENSOR_LOG(PSTR("AmbientHumidity: n/a\n"));
     }
     else
     {
-      Serial.print(SEN5XDATA->ambientHumidity);
+      DEBUG_SENSOR_LOG(PSTR("AmbientHumidity: %d\n"), SEN5XDATA->ambientHumidity);
     }
-    Serial.print("\t");
-    Serial.print("AmbientTemperature:");
+
     if (isnan(SEN5XDATA->ambientTemperature))
     {
-      Serial.print("n/a");
+    DEBUG_SENSOR_LOG(PSTR("AmbientTemperature: n/a\n"));
     }
     else
     {
-      Serial.print(SEN5XDATA->ambientTemperature);
+    DEBUG_SENSOR_LOG(PSTR("AmbientTemperature: %d\n"), SEN5XDATA->ambientTemperature);
     }
-    Serial.print("\t");
-    Serial.print("VocIndex:");
+    
     if (isnan(SEN5XDATA->vocIndex))
     {
-      Serial.print("n/a");
+      DEBUG_SENSOR_LOG(PSTR("VocIndex: n/a\n"));
     }
     else
     {
-      Serial.print(SEN5XDATA->vocIndex);
+    DEBUG_SENSOR_LOG(PSTR("VocIndex: %d\n"), SEN5XDATA->vocIndex);
     }
-    Serial.print("\t");
     
-    Serial.print("NoxIndex:");
     if (isnan(SEN5XDATA->noxIndex))
     {
-      Serial.println("n/a");
+      DEBUG_SENSOR_LOG(PSTR("NoxIndex: n/a\n"));
     }
     else
     {
-      Serial.println(SEN5XDATA->noxIndex);
+      DEBUG_SENSOR_LOG(PSTR("NoxIndex: %d\n"), SEN5XDATA->noxIndex);
     }
 #endif
   }
-  if (!isnan(SEN5XDATA->ambientTemperature) && SEN5XDATA->ambientHumidity > 0)
+  if (!isnan(SEN5XDATA->ambientTemperature) && SEN5XDATA->ambientHumidity > 0) {
     SEN5XDATA->abshum = sen5x_AbsoluteHumidity(SEN5XDATA->ambientTemperature, SEN5XDATA->ambientHumidity);
+    DEBUG_SENSOR_LOG(PSTR("AbsoluteHumidity: %d\n"), SEN5XDATA->abshum);
+  }
 }
 
 #ifdef USE_WEBSERVER

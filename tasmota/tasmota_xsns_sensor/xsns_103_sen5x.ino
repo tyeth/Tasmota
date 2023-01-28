@@ -209,9 +209,10 @@ void SEN5XUpdate(void) // Perform every second to ensure proper operation of the
 }
 
 #ifdef USE_WEBSERVER
-const char HTTP_SNS_SEN5X[] PROGMEM = "{s}SEN5X %s{m}%.*f{e}";
+const char HTTP_SNS_SEN5X_UNITS[] PROGMEM = "{s}SEN5X %s{m}%.*f %s{e}";
+const char HTTP_SNS_SEN5X_UNITLESS[] PROGMEM = "{s}SEN5X %s{m}%.*f{e}";
 // {s} = <tr><th>, {m} = </th><td>, {e} = </td></tr>
-const char HTTP_SNS_AHUMSEN5X[] PROGMEM = "{s}SEN5X Abs Humidity{m}%s g/m3{e}";
+const char HTTP_SNS_AHUMSEN5X[] PROGMEM = "{s}SEN5X Abs Humidity{m}%s g/m³{e}";
 #endif
 
 #define D_JSON_AHUM "aHumidity"
@@ -247,18 +248,18 @@ void SEN5XShow(bool json)
 
 #ifdef USE_WEBSERVER
 
-    WSContentSend_PD(HTTP_SNS_SEN5X, "PM1", 1, SEN5XDATA->massConcentrationPm1p0);
-    WSContentSend_PD(HTTP_SNS_SEN5X, "PM2.5", 1, SEN5XDATA->massConcentrationPm2p5);
-    WSContentSend_PD(HTTP_SNS_SEN5X, "PM4", 1, SEN5XDATA->massConcentrationPm4p0);
-    WSContentSend_PD(HTTP_SNS_SEN5X, "PM10", 1, SEN5XDATA->massConcentrationPm10p0);
+    WSContentSend_PD(HTTP_SNS_SEN5X_UNITS, "PM1", 1, SEN5XDATA->massConcentrationPm1p0, "μg/m³");
+    WSContentSend_PD(HTTP_SNS_SEN5X_UNITS, "PM2.5", 1, SEN5XDATA->massConcentrationPm2p5, "μg/m³");
+    WSContentSend_PD(HTTP_SNS_SEN5X_UNITS, "PM4", 1, SEN5XDATA->massConcentrationPm4p0, "μg/m³");
+    WSContentSend_PD(HTTP_SNS_SEN5X_UNITS, "PM10", 1, SEN5XDATA->massConcentrationPm10p0, "μg/m³");
     if (!isnan(SEN5XDATA->noxIndex))
-      WSContentSend_PD(HTTP_SNS_SEN5X, "NOx", 0, SEN5XDATA->noxIndex);
+      WSContentSend_PD(HTTP_SNS_SEN5X_UNITLESS, "NOx", 0, SEN5XDATA->noxIndex);
     if (!isnan(SEN5XDATA->vocIndex))
-      WSContentSend_PD(HTTP_SNS_SEN5X, "VOC", 0, SEN5XDATA->vocIndex);
+      WSContentSend_PD(HTTP_SNS_SEN5X_UNITLESS, "VOC", 0, SEN5XDATA->vocIndex);
     if (!isnan(SEN5XDATA->ambientTemperature))
-      WSContentSend_PD(HTTP_SNS_SEN5X, "Temperature", 2, SEN5XDATA->ambientTemperature);
+      WSContentSend_PD(HTTP_SNS_SEN5X_UNITS, "Temperature", 2, SEN5XDATA->ambientTemperature, "°C");
     if (!isnan(SEN5XDATA->ambientHumidity))
-      WSContentSend_PD(HTTP_SNS_SEN5X, "Humidity", 2, SEN5XDATA->ambientHumidity);
+      WSContentSend_PD(HTTP_SNS_SEN5X_UNITS, "Humidity", 2, SEN5XDATA->ambientHumidity, "%%RH");
     if (ahum_available)
       WSContentSend_PD(HTTP_SNS_AHUMSEN5X, sen5x_abs_hum);
 

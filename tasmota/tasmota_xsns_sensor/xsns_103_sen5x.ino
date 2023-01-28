@@ -35,7 +35,7 @@
 
 #include <SensirionI2CSen5x.h>
 #include <Wire.h>
-SensirionI2CSen5x *sen5x;
+SensirionI2CSen5x *sen5x = nullptr;
 
 struct SEN5XDATA_s {
   bool sen5x_ready;
@@ -53,8 +53,11 @@ struct SEN5XDATA_s {
 
 void sen5x_Init(void)
 {
+  if(!TasmotaGlobal.i2c_enabled){
+    DEBUG_SENSOR_LOG(PSTR("I2C Not enabled, so not loading SEN5X driver."));
+    return;
+  }
   int usingI2cBus = 0;
-  TwoWire i2cBus = Wire;
 #ifdef ESP32
   if (!I2cSetDevice(SEN5X_ADDRESS, 0))
   {
@@ -65,9 +68,8 @@ void sen5x_Init(void)
         DEBUG_SENSOR_LOG(PSTR("Sensirion SEN5X not found, i2c bus 1"));
         return;
       }
-      i2cBus = Wire1; // switch to bus 1
       usingI2cBus = 1;
-    }               // check on bus 1
+    }
     else {
       return;
     }
@@ -82,7 +84,13 @@ void sen5x_Init(void)
   if (SEN5XDATA == nullptr) 
     SEN5XDATA = (SEN5XDATA_s *)calloc(1, sizeof(struct SEN5XDATA_s));
   SEN5XDATA->sen5x_ready = false;
-  sen5x->begin(i2cBus);
+  if(sen5x == nullptr) sen5x = new SensirionI2CSen5x();
+  if(usingI2cBus==1){
+    sen5x->begin(Wire1);
+  } 
+  else {
+    sen5x->begin(Wire);
+  }  
   int error_stop = sen5x->deviceReset();
   if (error_stop != 0)
   {
@@ -153,17 +161,17 @@ void SEN5XUpdate(void) // Perform every second to ensure proper operation of the
   {
 #ifdef DEBUG_TASMOTA_SENSOR
     DEBUG_SENSOR_LOG(PSTR("SEN5x readings:-"));
-    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm1p0: %d\n"), SEN5XDATA->massConcentrationPm1p0);
-    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm2p5: %d\n"), SEN5XDATA->massConcentrationPm2p5);
-    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm4p0: %d\n"), SEN5XDATA->massConcentrationPm4p0);
-    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm10p0: %d\n"), SEN5XDATA->massConcentrationPm10p0);
+    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm1p0: %f\n"), SEN5XDATA->massConcentrationPm1p0);
+    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm2p5: %f\n"), SEN5XDATA->massConcentrationPm2p5);
+    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm4p0: %f\n"), SEN5XDATA->massConcentrationPm4p0);
+    DEBUG_SENSOR_LOG(PSTR("MassConcentrationPm10p0: %f\n"), SEN5XDATA->massConcentrationPm10p0);
     if (isnan(SEN5XDATA->ambientHumidity))
     {
       DEBUG_SENSOR_LOG(PSTR("AmbientHumidity: n/a\n"));
     }
     else
     {
-      DEBUG_SENSOR_LOG(PSTR("AmbientHumidity: %d\n"), SEN5XDATA->ambientHumidity);
+      DEBUG_SENSOR_LOG(PSTR("AmbientHumidity: %f\n"), SEN5XDATA->ambientHumidity);
     }
 
     if (isnan(SEN5XDATA->ambientTemperature))
@@ -172,7 +180,7 @@ void SEN5XUpdate(void) // Perform every second to ensure proper operation of the
     }
     else
     {
-    DEBUG_SENSOR_LOG(PSTR("AmbientTemperature: %d\n"), SEN5XDATA->ambientTemperature);
+    DEBUG_SENSOR_LOG(PSTR("AmbientTemperature: %f\n"), SEN5XDATA->ambientTemperature);
     }
     
     if (isnan(SEN5XDATA->vocIndex))
@@ -181,7 +189,7 @@ void SEN5XUpdate(void) // Perform every second to ensure proper operation of the
     }
     else
     {
-    DEBUG_SENSOR_LOG(PSTR("VocIndex: %d\n"), SEN5XDATA->vocIndex);
+    DEBUG_SENSOR_LOG(PSTR("VocIndex: %f\n"), SEN5XDATA->vocIndex);
     }
     
     if (isnan(SEN5XDATA->noxIndex))
@@ -190,22 +198,19 @@ void SEN5XUpdate(void) // Perform every second to ensure proper operation of the
     }
     else
     {
-      DEBUG_SENSOR_LOG(PSTR("NoxIndex: %d\n"), SEN5XDATA->noxIndex);
+      DEBUG_SENSOR_LOG(PSTR("NoxIndex: %f\n"), SEN5XDATA->noxIndex);
     }
 #endif
   }
   if (!isnan(SEN5XDATA->ambientTemperature) && SEN5XDATA->ambientHumidity > 0) {
     SEN5XDATA->abshum = sen5x_AbsoluteHumidity(SEN5XDATA->ambientTemperature, SEN5XDATA->ambientHumidity);
-    DEBUG_SENSOR_LOG(PSTR("AbsoluteHumidity: %d\n"), SEN5XDATA->abshum);
+    DEBUG_SENSOR_LOG(PSTR("AbsoluteHumidity: %f\n"), SEN5XDATA->abshum);
   }
 }
 
 #ifdef USE_WEBSERVER
-const char HTTP_SNS_SEN5X[] PROGMEM =
-    "{s}SEN5X " D_JSON_RAW "{m}%d "
-    "{e}" // {s} = <tr><th>, {m} = </th><td>, {e} = </td></tr>
-    "{s}SEN5X " D_AIR_QUALITY "{m}%d "
-    "{e}";
+const char HTTP_SNS_SEN5X[] PROGMEM = "{s}SEN5X %s{m}%.*f{e}";
+// {s} = <tr><th>, {m} = </th><td>, {e} = </td></tr>
 const char HTTP_SNS_AHUMSEN5X[] PROGMEM = "{s}SEN5X Abs Humidity{m}%s g/m3{e}";
 #endif
 
@@ -216,7 +221,7 @@ void SEN5XShow(bool json)
   if (SEN5XDATA->sen5x_ready)
   {
     char sen5x_abs_hum[33];
-    bool ahum_available = (SEN5XDATA->ambientHumidity > 0) && !isnan(SEN5XDATA->ambientTemperature);
+    bool ahum_available = !isnan(SEN5XDATA->ambientTemperature) && (SEN5XDATA->ambientHumidity > 0);
     if (ahum_available)
     {
       // has humidity + temperature
@@ -225,15 +230,16 @@ void SEN5XShow(bool json)
     if (json)
     {
       ResponseAppend_P(PSTR(",\"SEN5X\":{"));
-      ResponseAppend_P(PSTR("\"PM1\":%d,"), SEN5XDATA->massConcentrationPm1p0);
-      ResponseAppend_P(PSTR("\"PM2.5\":%d,"), SEN5XDATA->massConcentrationPm2p5);
-      ResponseAppend_P(PSTR("\"PM4\":%d,"), SEN5XDATA->massConcentrationPm4p0);
-      ResponseAppend_P(PSTR("\"PM10\":%d,"), SEN5XDATA->massConcentrationPm10p0);
+      ResponseAppend_P(PSTR("\"PM1\":%.1f,"), SEN5XDATA->massConcentrationPm1p0);
+      ResponseAppend_P(PSTR("\"PM2.5\":%.1f,"), SEN5XDATA->massConcentrationPm2p5);
+      ResponseAppend_P(PSTR("\"PM4\":%.1f,"), SEN5XDATA->massConcentrationPm4p0);
+      ResponseAppend_P(PSTR("\"PM10\":%.1f,"), SEN5XDATA->massConcentrationPm10p0);
       if (!isnan(SEN5XDATA->noxIndex))
-        ResponseAppend_P(PSTR("\"NOx\":%d,"), SEN5XDATA->noxIndex);
+        ResponseAppend_P(PSTR("\"NOx\":%.0f,"), SEN5XDATA->noxIndex);
       if (!isnan(SEN5XDATA->vocIndex))
-        ResponseAppend_P(PSTR("\"VOC\":%d,"), SEN5XDATA->vocIndex);
-      ResponseAppendTHD(SEN5XDATA->ambientTemperature, SEN5XDATA->ambientHumidity);
+        ResponseAppend_P(PSTR("\"VOC\":%.0f,"), SEN5XDATA->vocIndex);
+      if (!isnan(SEN5XDATA->ambientTemperature))
+        ResponseAppendTHD(SEN5XDATA->ambientTemperature, SEN5XDATA->ambientHumidity);
       if (ahum_available)
         ResponseAppend_P(PSTR(",\"" D_JSON_AHUM "\":%s"), sen5x_abs_hum);
       ResponseJsonEnd();
@@ -241,18 +247,20 @@ void SEN5XShow(bool json)
 
 #ifdef USE_WEBSERVER
 
-    WSContentSend_PD(HTTP_SNS_SEN5X, "1", SEN5XDATA->massConcentrationPm1p0);
-    WSContentSend_PD(HTTP_SNS_SEN5X, "2.5", SEN5XDATA->massConcentrationPm2p5);
-    WSContentSend_PD(HTTP_SNS_SEN5X, "4", SEN5XDATA->massConcentrationPm4p0);
-    WSContentSend_PD(HTTP_SNS_SEN5X, "10", SEN5XDATA->massConcentrationPm10p0);
+    WSContentSend_PD(HTTP_SNS_SEN5X, "PM1", 1, SEN5XDATA->massConcentrationPm1p0);
+    WSContentSend_PD(HTTP_SNS_SEN5X, "PM2.5", 1, SEN5XDATA->massConcentrationPm2p5);
+    WSContentSend_PD(HTTP_SNS_SEN5X, "PM4", 1, SEN5XDATA->massConcentrationPm4p0);
+    WSContentSend_PD(HTTP_SNS_SEN5X, "PM10", 1, SEN5XDATA->massConcentrationPm10p0);
     if (!isnan(SEN5XDATA->noxIndex))
-      WSContentSend_PD(HTTP_SNS_SEN5X, "NOx", SEN5XDATA->noxIndex);
+      WSContentSend_PD(HTTP_SNS_SEN5X, "NOx", 0, SEN5XDATA->noxIndex);
     if (!isnan(SEN5XDATA->vocIndex))
-      WSContentSend_PD(HTTP_SNS_SEN5X, "VOC", SEN5XDATA->vocIndex);
-    WSContentSend_PD(HTTP_SNS_SEN5X, "Humidity", SEN5XDATA->ambientTemperature);
-    WSContentSend_PD(HTTP_SNS_SEN5X, "Temperature", SEN5XDATA->ambientHumidity);
+      WSContentSend_PD(HTTP_SNS_SEN5X, "VOC", 0, SEN5XDATA->vocIndex);
+    if (!isnan(SEN5XDATA->ambientTemperature))
+      WSContentSend_PD(HTTP_SNS_SEN5X, "Temperature", 2, SEN5XDATA->ambientTemperature);
+    if (!isnan(SEN5XDATA->ambientHumidity))
+      WSContentSend_PD(HTTP_SNS_SEN5X, "Humidity", 2, SEN5XDATA->ambientHumidity);
     if (ahum_available)
-      WSContentSend_PD(HTTP_SNS_SEN5X, D_JSON_AHUM, sen5x_abs_hum);
+      WSContentSend_PD(HTTP_SNS_AHUMSEN5X, sen5x_abs_hum);
 
 #endif
   }

@@ -86,7 +86,11 @@ void sen5x_Init(void)
   SEN5XDATA->sen5x_ready = false;
   if(sen5x == nullptr) sen5x = new SensirionI2CSen5x();
   if(usingI2cBus==1){
+#ifdef ESP32
     sen5x->begin(Wire1);
+#else
+    sen5x->begin(Wire);
+#endif
   } 
   else {
     sen5x->begin(Wire);

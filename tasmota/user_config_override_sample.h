@@ -93,6 +93,11 @@ Examples :
 #undef  STA_PASS1
 #define STA_PASS1         "password"     // [Password1] Wifi password
 
+#ifdef SENSOR_MAX_MISS
+#undef SENSOR_MAX_MISS
+#endif
+#define SENSOR_MAX_MISS 10              // Retries before sensor offline
+
 #define USE_DISPLAY
 #define USE_DISPLAYS
 #define USE_DISPLAY_ST7789 
@@ -104,36 +109,81 @@ Examples :
 //   //  #define USE_GRAPH                            // Enable line charts with displays
 //   //  #define NUM_GRAPHS     4  
 
+#ifndef USE_AUTOCONF
 #define USE_AUTOCONF                             // Enable Esp32 autoconf feature, requires USE_BERRY and USE_WEBCLIENT_HTTPS (12KB Flash)
+#endif
+
+#ifndef USE_I2C
+#define USE_I2C
+#endif
 
 // //  #define USE_SCD30                              // [I2cDriver29] Enable Sensiron SCd30 CO2 sensor (I2C address 0x61) (+3k3 code)
- #define USE_SCD40                              // [I2cDriver62] Enable Sensiron SCd40/Scd41 CO2 sensor (I2C address 0x62) (+3k5 code)
- #define USE_SPS30
-#define USE_VL53L0X                            // [I2cDriver31] Enable VL53L0x time of flight sensor (I2C address 0x29) (+4k code)
-// //    #define VL53L0X_XSHUT_ADDRESS 0x78           //   VL53L0X base address when used with XSHUT control
-//  //#define USE_VL53L1X                            // [I2cDriver54] Enable VL53L1X time of flight sensor (I2C address 0x29) using Pololu VL53L1X library (+2k9 code)
+#ifndef USE_SCD40
+  #define USE_SCD40                              // [I2cDriver62] Enable Sensiron SCd40/Scd41 CO2 sensor (I2C address 0x62) (+3k5 code)
+#endif
+#ifndef USE_SPS30
+  #define USE_SPS30
+#endif
+
+#ifndef USE_VL53L0X
+  #define USE_VL53L0X                            // [I2cDriver31] Enable VL53L0x time of flight sensor (I2C address 0x29) (+4k code)
+#endif
+
+#ifdef VL53L0X_XSHUT_ADDRESS
+#undef VL53L0X_XSHUT_ADDRESS
+#endif
+#define VL53L0X_XSHUT_ADDRESS 0x78           //   VL53L0X base address when used with XSHUT control
+
+#ifdef USE_VL53L1X
+ #undef USE_VL53L1X                            // [I2cDriver54] Enable VL53L1X time of flight sensor (I2C address 0x29) using Pololu VL53L1X library (+2k9 code)
+#endif
 // //    #define VL53L1X_XSHUT_ADDRESS 0x78           //   VL53L1X base address when used with XSHUT control
 //   // #define VL53L1X_DISTANCE_MODE Long           //   VL53L1X distance mode : Long | Medium | Short
+
+
+#ifdef USE_AHT1x
+#undef USE_AHT1x
+#endif
+#ifndef USE_AHT2x
 #define USE_AHT2x  
-#define USE_VEML7700 
+#endif
+
+#ifndef USE_VEML7700
+#define USE_VEML7700
+#endif 
 // //  #define USE_SGP30                              // [I2cDriver18] Enable SGP30 sensor (I2C address 0x58) (+1k1 code)
 // //  #define USE_SGP40
+ 
+#ifndef USE_SEN5X
  #define USE_SEN5X                              // [I2cDriver76] Enable SEN5X sensor (I2C address 0x69) (+3k code)
+#endif
 
+#ifdef USE_SHT
+#undef USE_SHT
+#endif
 // #define USE_SHT                                // [I2cDriver8] Enable SHT1X sensor (+1k4 code)
-#define USE_HTU                                // [I2cDriver9] Enable HTU21/SI7013/SI7020/SI7021 sensor (I2C address 0x40) (+1k5 code)
-#define USE_BMP                                // [I2cDriver10] Enable BMP085/BMP180/BMP280/BME280 sensors (I2C addresses 0x76 and 0x77) (+4k4 code)
+// #define USE_HTU                                // [I2cDriver9] Enable HTU21/SI7013/SI7020/SI7021 sensor (I2C address 0x40) (+1k5 code)
+// #define USE_BMP                                // [I2cDriver10] Enable BMP085/BMP180/BMP280/BME280 sensors (I2C addresses 0x76 and 0x77) (+4k4 code)
 //     #define USE_BME68X                           // Enable support for BME680/BME688 sensor using Bosch BME68x library (+6k9 code)
 // //  #define USE_BH1750                             // [I2cDriver11] Enable BH1750 sensor (I2C address 0x23 or 0x5C) (+0k5 code)
-// //  #define USE_VEML6070                           // [I2cDriver12] Enable VEML6070 sensor (I2C addresses 0x38 and 0x39) (+1k5 code)
+#ifdef USE_VEML6070
+#undef USE_VEML6070
+#endif                           // [I2cDriver12] Enable VEML6070 sensor (I2C addresses 0x38 and 0x39) (+1k5 code)
 // //     #define USE_VEML6070_RSET    270000          // VEML6070, Rset in Ohm used on PCB board, default 270K = 270000ohm, range for this sensor: 220K ... 1Meg
 // //     #define USE_VEML6070_SHOW_RAW                // VEML6070, shows the raw value of UV-A
+#ifdef USE_VEML6075
+#undef USE_VEML6075
+#endif      
+
+
 //  #define USE_ADS1115                            // [I2cDriver13] Enable ADS1115 16 bit A/D converter (I2C address 0x48, 0x49, 0x4A or 0x4B) based on Adafruit ADS1x15 library (no library needed) (+0k7 code)
 // //  #define USE_INA219                             // [I2cDriver14] Enable INA219 (I2C address 0x40, 0x41 0x44 or 0x45) Low voltage and current sensor (+1k code)
 //   //  #define INA219_SHUNT_RESISTOR (0.100)        // 0.1 Ohm default shunt resistor, can be overriden in user_config_override or using Sensor13
-// //  #define USE_INA226                             // [I2cDriver35] Enable INA226 (I2C address 0x40, 0x41 0x44 or 0x45) Low voltage and current sensor (+2k3 code)
+// //  #define USE_INA226 
+                            // [I2cDriver35] Enable INA226 (I2C address 0x40, 0x41 0x44 or 0x45) Low voltage and current sensor (+2k3 code)
+#ifndef USE_SHT3X
  #define USE_SHT3X  
-
+#endif
 
 
 // //  #define USE_RTC_CHIPS                          // Enable RTC chip support and NTP server - Select only one
@@ -142,12 +192,13 @@ Examples :
 
 // #define USE_MQTT_TLS  
 
-#define DEBUG_TASMOTA_CORE                       // Enable core debug messages
-#define DEBUG_TASMOTA_DRIVER                     // Enable driver debug messages
+// #define DEBUG_TASMOTA_CORE                       // Enable core debug messages
+// #define DEBUG_TASMOTA_DRIVER                     // Enable driver debug messages
 #define DEBUG_TASMOTA_SENSOR                     // Enable sensor debug messages
-#define USE_DEBUG_DRIVER                         // Use xdrv_99_debug.ino providing commands CpuChk, CfgXor, CfgDump, CfgPeek and CfgPoke
+//#define USE_DEBUG_DRIVER                         // Use xdrv_99_debug.ino providing commands CpuChk, CfgXor, CfgDump, CfgPeek and CfgPoke
 #define USE_BERRY_DEBUG                        // Compile Berry bytecode with line number information, makes exceptions easier to debug. Adds +8% of memory consumption for compiled code
 
+#ifndef USE_LVGL
 // // -- LVGL Graphics Library ---------------------------------
 #define USE_LVGL                                 // LVGL Engine, requires Berry (+382KB)
   #define USE_LVGL_PSRAM                         // Allocate LVGL memory in PSRAM if PSRAM is connected - this might be slightly slower but leaves main memory intact
@@ -156,7 +207,8 @@ Examples :
   #define USE_LVGL_PNG_DECODER                   // include a PNG image decoder from file system (+16KB)
   // #define USE_LVGL_TOUCHSCREEN                   // Use virtual touch screen with Berry driver
   #define USE_LVGL_FREETYPE                      // Use the FreeType renderer to display fonts using native TTF files in file system (+77KB flash)
-  
+#endif
+
 #ifdef SERIAL_LOG_LEVEL
 #undef SERIAL_LOG_LEVEL
 #endif

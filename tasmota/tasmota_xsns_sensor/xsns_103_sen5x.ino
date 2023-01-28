@@ -259,7 +259,7 @@ void SEN5XShow(bool json)
     if (!isnan(SEN5XDATA->ambientTemperature))
       WSContentSend_PD(HTTP_SNS_SEN5X_UNITS, "Temperature", 2, SEN5XDATA->ambientTemperature, "°C");
     if (!isnan(SEN5XDATA->ambientHumidity))
-      WSContentSend_PD(HTTP_SNS_SEN5X_UNITS, "Humidity", 2, SEN5XDATA->ambientHumidity, "%%RH");
+      WSContentSend_PD(HTTP_SNS_SEN5X_UNITS, "Humidity", 2, SEN5XDATA->ambientHumidity, "%RH");
     if (ahum_available)
       WSContentSend_PD(HTTP_SNS_AHUMSEN5X, sen5x_abs_hum);
 
